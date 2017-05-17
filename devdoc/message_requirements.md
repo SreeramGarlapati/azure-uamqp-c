@@ -56,8 +56,8 @@
 MESSAGE_HANDLE message_create(void);
 ```
 
-**SRS_MESSAGE_01_001: [** `message_create` shall create a new AMQP message instance and on success it shall return a non-NULL handle for the newly created message instance. **]**
-**SRS_MESSAGE_01_002: [** If allocating memory for the message fails, `message_create` shall fail and return NULL. **]**
+XX**SRS_MESSAGE_01_001: [** `message_create` shall create a new AMQP message instance and on success it shall return a non-NULL handle for the newly created message instance. **]**
+XX**SRS_MESSAGE_01_002: [** If allocating memory for the message fails, `message_create` shall fail and return NULL. **]**
 
 ### message_clone
 
@@ -65,16 +65,16 @@ MESSAGE_HANDLE message_create(void);
 MESSAGE_HANDLE message_clone(MESSAGE_HANDLE source_message);
 ```
 
-**SRS_MESSAGE_01_003: [** `message_clone` shall clone a message entirely and on success return a non-NULL handle to the cloned message. **]**
+XX**SRS_MESSAGE_01_003: [** `message_clone` shall clone a message entirely and on success return a non-NULL handle to the cloned message. **]**
 **SRS_MESSAGE_01_062: [** If `source_message` is NULL, `message_clone` shall fail and return NULL. **]**
 **SRS_MESSAGE_01_004: [** If allocating memory for the new cloned message fails, `message_clone` shall fail and return NULL. **]**
-**SRS_MESSAGE_01_005: [** If a header exists on the source message it shall be cloned by using `header_clone`. **]**
-**SRS_MESSAGE_01_006: [** If delivery annotations exist on the source message they shall be cloned by using `annotations_clone`. **]**
-**SRS_MESSAGE_01_007: [** If message annotations exist on the source message they shall be cloned by using `annotations_clone`. **]**
-**SRS_MESSAGE_01_008: [** If message properties exist on the source message they shall be cloned by using `properties_clone`. **]**
-**SRS_MESSAGE_01_009: [** If application properties exist on the source message they shall be cloned by using `amqpvalue_clone`. **]**
-**SRS_MESSAGE_01_010: [** If a footer exists on the source message it shall be cloned by using `annotations_clone`. **]**
-**SRS_MESSAGE_01_011: [** If an AMQP data has been set as message body on the source message it shall be cloned by allocating memory for the binary payload. **]**
+XX**SRS_MESSAGE_01_005: [** If a header exists on the source message it shall be cloned by using `header_clone`. **]**
+XX**SRS_MESSAGE_01_006: [** If delivery annotations exist on the source message they shall be cloned by using `annotations_clone`. **]**
+XX**SRS_MESSAGE_01_007: [** If message annotations exist on the source message they shall be cloned by using `annotations_clone`. **]**
+XX**SRS_MESSAGE_01_008: [** If message properties exist on the source message they shall be cloned by using `properties_clone`. **]**
+XX**SRS_MESSAGE_01_009: [** If application properties exist on the source message they shall be cloned by using `amqpvalue_clone`. **]**
+XX**SRS_MESSAGE_01_010: [** If a footer exists on the source message it shall be cloned by using `annotations_clone`. **]**
+XX**SRS_MESSAGE_01_011: [** If an AMQP data has been set as message body on the source message it shall be cloned by allocating memory for the binary payload. **]**
 **SRS_MESSAGE_01_012: [** If any cloning operation for the members of the source message fails, then `message_clone` shall fail and return NULL. **]**
 
 ### message_destroy
@@ -83,15 +83,18 @@ MESSAGE_HANDLE message_clone(MESSAGE_HANDLE source_message);
 void message_destroy(MESSAGE_HANDLE message);
 ```
 
-**SRS_MESSAGE_01_013: [** `message_destroy` shall free all resources allocated by the message instance identified by the `message` argument. **]**
-**SRS_MESSAGE_01_014: [** If `message` is NULL, `message_destroy` shall do nothing. **]**
-**SRS_MESSAGE_01_015: [** The message header shall be freed by calling `header_destroy`. **]**
-**SRS_MESSAGE_01_016: [** The delivery annotations shall be freed by calling `annotations_destroy`. **]**
-**SRS_MESSAGE_01_017: [** The message annotations shall be freed by calling `annotations_destroy`. **]**
-**SRS_MESSAGE_01_018: [** The message properties shall be freed by calling `properties_destroy`. **]**
-**SRS_MESSAGE_01_019: [** The application properties shall be freed by calling `amqpvalue_destroy`. **]**
-**SRS_MESSAGE_01_020: [** The message footer shall be freed by calling `annotations_destroy`. **]**
-**SRS_MESSAGE_01_021: [** If the message body is made of an AMQP data, the memory buffer holding it shall be freed by calling `free`. **]**
+XX**SRS_MESSAGE_01_013: [** `message_destroy` shall free all resources allocated by the message instance identified by the `message` argument. **]**
+XX**SRS_MESSAGE_01_014: [** If `message` is NULL, `message_destroy` shall do nothing. **]**
+XX**SRS_MESSAGE_01_015: [** The message header shall be freed by calling `header_destroy`. **]**
+XX**SRS_MESSAGE_01_016: [** The delivery annotations shall be freed by calling `annotations_destroy`. **]**
+XX**SRS_MESSAGE_01_017: [** The message annotations shall be freed by calling `annotations_destroy`. **]**
+XX**SRS_MESSAGE_01_018: [** The message properties shall be freed by calling `properties_destroy`. **]**
+XX**SRS_MESSAGE_01_019: [** The application properties shall be freed by calling `amqpvalue_destroy`. **]**
+XX**SRS_MESSAGE_01_020: [** The message footer shall be freed by calling `annotations_destroy`. **]**
+XX**SRS_MESSAGE_01_021: [** If the message body is made of an AMQP value, the value shall be freed by calling `amqpvalue_destroy`. **]**
+XX**SRS_MESSAGE_01_136: [** If the message body is made of several AMQP data items, they shall all be freed. **]**
+XX**SRS_MESSAGE_01_136: [** If the message body is made of several AMQP sequences, they shall all be freed. **]**
+XX**SRS_MESSAGE_01_137: [** Each sequence shall be freed by calling `amqpvalue_destroy`. **]**
 
 ### message_set_header
 
@@ -99,12 +102,13 @@ void message_destroy(MESSAGE_HANDLE message);
 int message_set_header(MESSAGE_HANDLE message, HEADER_HANDLE message_header);
 ```
 
-**SRS_MESSAGE_01_022: [** `message_set_header` shall copy the contents of message_header as the header for the message instance identified by message. **]**
-**SRS_MESSAGE_01_023: [** On success it shall return 0. **]**
-**SRS_MESSAGE_01_024: [** If `message` or `message_header` is NULL, `message_set_header` shall fail and return a non-zero value. **]**
-**SRS_MESSAGE_01_025: [** Cloning the header shall be done by calling `header_clone`. **]**
-**SRS_MESSAGE_01_026: [** If `header_clone` fails, `message_set_header` shall fail and return a non-zero value. **]**
-If setting the header fails, the previous value shall be preserved.
+XX**SRS_MESSAGE_01_022: [** `message_set_header` shall copy the contents of `message_header` as the header for the message instance identified by message. **]**
+XX**SRS_MESSAGE_01_023: [** On success it shall return 0. **]**
+XX**SRS_MESSAGE_01_024: [** If `message` is NULL, `message_set_header` shall fail and return a non-zero value. **]**
+XX**SRS_MESSAGE_01_025: [** Cloning the header shall be done by calling `header_clone`. **]**
+XX**SRS_MESSAGE_01_026: [** If `header_clone` fails, `message_set_header` shall fail and return a non-zero value. **]**
+XX**SRS_MESSAGE_01_138: [** If setting the header fails, the previous value shall be preserved. **]**
+XX**SRS_MESSAGE_01_139: [** If `message_header` is NULL, the previously stored header associated with `message` shall be freed. **]**
 
 ### message_get_header
 
@@ -112,9 +116,9 @@ If setting the header fails, the previous value shall be preserved.
 int message_get_header(MESSAGE_HANDLE message, HEADER_HANDLE* message_header);
 ```
 
-**SRS_MESSAGE_01_027: [** `message_get_header` shall copy the contents of header for the message instance identified by `message` into the argument `message_header`. **]**
-**SRS_MESSAGE_01_028: [** On success, `message_get_header` shall return 0.**]**
-**SRS_MESSAGE_01_029: [** If `message` or `message_header` is NULL, `message_get_header` shall fail and return a non-zero value. **]**
+XX**SRS_MESSAGE_01_027: [** `message_get_header` shall copy the contents of header for the message instance identified by `message` into the argument `message_header`. **]**
+XX**SRS_MESSAGE_01_028: [** On success, `message_get_header` shall return 0.**]**
+XX**SRS_MESSAGE_01_029: [** If `message` or `message_header` is NULL, `message_get_header` shall fail and return a non-zero value. **]**
 **SRS_MESSAGE_01_030: [** Cloning the header shall be done by calling `header_clone`. **]**
 **SRS_MESSAGE_01_031: [** If `header_clone` fails, `message_get_header` shall fail and return a non-zero value. **]**
 

@@ -24,8 +24,8 @@ typedef struct MESSAGE_INSTANCE_TAG
 	size_t body_amqp_sequence_count;
 	AMQP_VALUE body_amqp_value;
 	HEADER_HANDLE header;
-	annotations delivery_annotations;
-	annotations message_annotations;
+	delivery_annotations delivery_annotations;
+	message_annotations message_annotations;
 	PROPERTIES_HANDLE properties;
 	application_properties application_properties;
 	annotations footer;
@@ -44,7 +44,10 @@ static void free_all_body_data_items(MESSAGE_HANDLE message)
 		}
 	}
 
-	free(message->body_amqp_data_items);
+	if (message->body_amqp_data_items != NULL)
+	{
+		free(message->body_amqp_data_items);
+	}
 	message->body_amqp_data_count = 0;
 	message->body_amqp_data_items = NULL;
 }
@@ -57,11 +60,15 @@ static void free_all_body_sequence_items(MESSAGE_HANDLE message)
 	{
 		if (message->body_amqp_sequence_items[i] != NULL)
 		{
+			/* Codes_SRS_MESSAGE_01_137: [ Each sequence shall be freed by calling `amqpvalue_destroy`. ]*/
 			amqpvalue_destroy(message->body_amqp_sequence_items[i]);
 		}
 	}
 
-	free(message->body_amqp_sequence_items);
+	if (message->body_amqp_sequence_items != NULL)
+	{
+		free(message->body_amqp_sequence_items);
+	}
 	message->body_amqp_sequence_count = 0;
 	message->body_amqp_sequence_items = NULL;
 }
@@ -281,36 +288,58 @@ void message_destroy(MESSAGE_HANDLE message)
 {
 	if (message == NULL)
 	{
+		/* Codes_SRS_MESSAGE_01_014: [ If `message` is NULL, `message_destroy` shall do nothing. ]*/
 		LogError("NULL message");
 	}
 	else
 	{
+		/* Codes_SRS_MESSAGE_01_013: [ `message_destroy` shall free all resources allocated by the message instance identified by the `message` argument. ]*/
 		if (message->header != NULL)
 		{
+			/* Codes_SRS_MESSAGE_01_015: [ The message header shall be freed by calling `header_destroy`. ]*/
 			header_destroy(message->header);
 		}
+
+		if (message->delivery_annotations != NULL)
+		{
+			/* Codes_SRS_MESSAGE_01_016: [ The delivery annotations shall be freed by calling `annotations_destroy`. ]*/
+			annotations_destroy(message->delivery_annotations);
+		}
+
+		if (message->message_annotations != NULL)
+		{
+			/* Codes_SRS_MESSAGE_01_017: [ The message annotations shall be freed by calling `annotations_destroy`. ]*/
+			annotations_destroy(message->message_annotations);
+		}
+
 		if (message->properties != NULL)
 		{
+			/* Codes_SRS_MESSAGE_01_018: [ The message properties shall be freed by calling `properties_destroy`. ]*/
 			properties_destroy(message->properties);
 		}
+
 		if (message->application_properties != NULL)
 		{
+			/* Codes_SRS_MESSAGE_01_019: [ The application properties shall be freed by calling `amqpvalue_destroy`. ]*/
 			application_properties_destroy(message->application_properties);
 		}
+
 		if (message->footer != NULL)
 		{
+			/* Codes_SRS_MESSAGE_01_020: [ The message footer shall be freed by calling `annotations_destroy`. ]*/
 			annotations_destroy(message->footer);
 		}
+
 		if (message->body_amqp_value != NULL)
 		{
+			/* Codes_SRS_MESSAGE_01_021: [ If the message body is made of an AMQP value, the value shall be freed by calling `amqpvalue_destroy`. ]*/
 			amqpvalue_destroy(message->body_amqp_value);
 		}
-        if (message->message_annotations != NULL)
-        {
-            application_properties_destroy(message->message_annotations);
-        }
 
+		/* Codes_SRS_MESSAGE_01_136: [ If the message body is made of several AMQP data items, they shall all be freed. ]*/
 		free_all_body_data_items(message);
+
+		/* Codes_SRS_MESSAGE_01_136: [ If the message body is made of several AMQP sequences, they shall all be freed. ]*/
 		free_all_body_sequence_items(message);
 		free(message);
 	}
@@ -320,32 +349,53 @@ int message_set_header(MESSAGE_HANDLE message, HEADER_HANDLE header)
 {
 	int result;
 
-	if ((message == NULL) ||
-		(header == NULL))
+	if (message == NULL)
 	{
-		LogError("Bad arguments: message = %p, header = %p",
-			message, header);
+		/* Codes_SRS_MESSAGE_01_024: [ If `message` is NULL, `message_set_header` shall fail and return a non-zero value. ]*/
+		LogError("NULL message");
 		result = __FAILURE__;
 	}
 	else
 	{
 		HEADER_HANDLE new_header;
 
-		new_header = header_clone(header);
-		if (new_header == NULL)
+		if (header == NULL)
 		{
-			LogError("Cannot clone message header");
-			result = __FAILURE__;
-		}
-		else
-		{
+			/* Codes_SRS_MESSAGE_01_139: [ If `message_header` is NULL, the previously stored header associated with `message` shall be freed. ]*/
 			if (message->header != NULL)
 			{
 				header_destroy(message->header);
+				message->header = NULL;
 			}
 
-			message->header = new_header;
+			/* Codes_SRS_MESSAGE_01_023: [ On success it shall return 0. ]*/
 			result = 0;
+		}
+		else
+		{
+			/* Codes_SRS_MESSAGE_01_022: [ `message_set_header` shall copy the contents of `message_header` as the header for the message instance identified by message. ]*/
+			/* Codes_SRS_MESSAGE_01_025: [ Cloning the header shall be done by calling `header_clone`. ]*/
+			new_header = header_clone(header);
+			if (new_header == NULL)
+			{
+				/* Codes_SRS_MESSAGE_01_026: [ If `header_clone` fails, `message_set_header` shall fail and return a non-zero value. ]*/
+				LogError("Cannot clone message header");
+				result = __FAILURE__;
+			}
+			else
+			{
+				/* Codes_SRS_MESSAGE_01_138: [ If setting the header fails, the previous value shall be preserved. ]*/
+				/* Only do the free of the previous value if we could clone the new one*/
+				if (message->header != NULL)
+				{
+					header_destroy(message->header);
+				}
+
+				message->header = new_header;
+
+				/* Codes_SRS_MESSAGE_01_023: [ On success it shall return 0. ]*/
+				result = 0;
+			}
 		}
 	}
 
@@ -359,6 +409,7 @@ int message_get_header(MESSAGE_HANDLE message, HEADER_HANDLE* header)
 	if ((message == NULL) ||
 		(header == NULL))
 	{
+		/* Codes_SRS_MESSAGE_01_029: [ If `message` or `message_header` is NULL, `message_get_header` shall fail and return a non-zero value. ]*/
 		LogError("Bad arguments: message = %p, header = %p",
 			message, header);
 		result = __FAILURE__;
@@ -368,18 +419,24 @@ int message_get_header(MESSAGE_HANDLE message, HEADER_HANDLE* header)
 		if (message->header == NULL)
 		{
 			*header = NULL;
+
+			/* Codes_SRS_MESSAGE_01_028: [ On success, `message_get_header` shall return 0.]*/
 			result = 0;
 		}
 		else
 		{
+			/* Codes_SRS_MESSAGE_01_027: [ `message_get_header` shall copy the contents of header for the message instance identified by `message` into the argument `message_header`. ]*/
+			/* Codes_SRS_MESSAGE_01_030: [ Cloning the header shall be done by calling `header_clone`. ]*/
 			*header = header_clone(message->header);
 			if (*header == NULL)
 			{
+				/* Codes_SRS_MESSAGE_01_031: [ If `header_clone` fails, `message_get_header` shall fail and return a non-zero value. ]*/
 				LogError("Cannot clone message header");
 				result = __FAILURE__;
 			}
 			else
 			{
+				/* Codes_SRS_MESSAGE_01_028: [ On success, `message_get_header` shall return 0.]*/
 				result = 0;
 			}
 		}
@@ -853,18 +910,12 @@ int message_get_body_amqp_data_count(MESSAGE_HANDLE message, size_t* count)
 int message_add_body_amqp_sequence(MESSAGE_HANDLE message, AMQP_VALUE sequence_list)
 {
 	int result;
-	size_t item_count;
 
 	if ((message == NULL) ||
 		(sequence_list == NULL))
 	{
 		LogError("Bad arguments: message = %p, sequence_list = %p",
 			message, sequence_list);
-		result = __FAILURE__;
-	}
-	else if (amqpvalue_get_list_item_count(sequence_list, (uint32_t*)&item_count) != 0)
-	{
-		LogError("Cannot retrieve message sequence list item count");
 		result = __FAILURE__;
 	}
 	else
